@@ -43,7 +43,30 @@ class Solution:
 
         return label_binarize(converted_op_list, \
                 multilabel=True, classes=range(n_ops))
+
+    @staticmethod
+    def _text_tokenize(text):
+        text = Solution._normalize_text(text)
+        tokens = word_tokenize(text)
+        tokens = list(map(lambda x: '^' + x + '$', tokens))
+        return tokens
         
+    @staticmethod
+    def _get_ngrams(token):
+        for i in xrange(len(token) - Solution._ngram + 1):
+            yield tk[i:i + Solution._ngram]
+
+    def _get_features_from_tokens(self, tokens):
+        ret = [0 for i in xrange(len(self._ngram_to_number))]
+
+        for token in tokens:
+            for ngram in Solution._get_ngrams(token):
+                idx = self._ngram_to_number.get(ngram, -1)
+                if idx != -1:
+                    ret[idx] += 1
+
+        return ret
+
     def train(self, train_corp):
         texts = train_corp[0]
 
@@ -52,24 +75,17 @@ class Solution:
 
         token_list = []
         for text in texts:
-            ntext = Solution._normalize_text(text)
-            
-            tokens = word_tokenize(ntext)
+            tokens = Solution._text_tokenize(text)
             token_list.append([])
+
             for token in tokens:
-                tk = '^' + token + '$'
                 token_list[-1].append(tk)
-                for i in xrange(len(tk) - Solution._ngram + 1):
-                    self._ngr_add(tk[i:i + Solution._ngram])
 
-        n_features = len(self._ngram_to_number)
+                for ngram in Solution._get_ngrams(token)
+                    self._ngr_add(ngram)
+
         for tokens in token_list:
-            features_list.append([0 for i in xrange(n_features)])
-
-            for tk in tokens:
-                for i in xrange(len(tk) - Solution._ngram + 1):
-                    ngram = tk[i:i + Solution._ngram]
-                    features_list[-1][self._ngram_to_number[ngram]] += 1
+            features_list.append(self._get_features_from_tokens(tokens))
 
         self._clf.fit(features_list, target)
 

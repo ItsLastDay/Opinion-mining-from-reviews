@@ -2,19 +2,21 @@ from sklearn.multiclass import OneVsRestClassifier
 import numpy as np
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import label_binarize
+from sklearn.metrics import f1_score
 from nltk import word_tokenize
 
 class Solution:
     _ngram = 3
 
-    def __init__(self):
+    def __init__(self, debug=False):
         self._opinion_to_number = dict()
         self._ngram_to_number = dict()
         self._n_fearures = 0
+        self._debug = debug
         self._clf = OneVsRestClassifier(MultinomialNB(), n_jobs=-1) 
     
-    def get_params(self):
-        return self._clf.get_params(deep=True)
+    def get_params(self, **params):
+        return self._clf.get_params(params)
 
     @staticmethod
     def _normalize_text(text):
@@ -49,7 +51,7 @@ class Solution:
             Reverse transformation to _encode_opinions.
         '''
         ret = []
-        for (op, number) in self._opinion_to_number:
+        for (op, number) in self._opinion_to_number.items():
             if bvect[number] == 1:
                 ret.append(op)
 
@@ -65,7 +67,7 @@ class Solution:
     @staticmethod
     def _get_ngrams(token):
         for i in xrange(len(token) - Solution._ngram + 1):
-            yield tk[i:i + Solution._ngram]
+            yield token[i:i + Solution._ngram]
 
     def _get_features_from_tokens(self, tokens):
         ret = [0 for i in xrange(len(self._ngram_to_number))]
@@ -90,9 +92,9 @@ class Solution:
             token_list.append([])
 
             for token in tokens:
-                token_list[-1].append(tk)
+                token_list[-1].append(token)
 
-                for ngram in Solution._get_ngrams(token)
+                for ngram in Solution._get_ngrams(token):
                     self._ngr_add(ngram)
 
         for tokens in token_list:
@@ -109,7 +111,7 @@ class Solution:
         tokens = Solution._text_tokenize(text)
         features = self._get_features_from_tokens(tokens)
 
-        answer = self._clf.predict(features)
+        answer = self._clf.predict(features)[0]
         
         return self._decode_opinions(answer)
 

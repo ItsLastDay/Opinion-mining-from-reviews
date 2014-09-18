@@ -26,5 +26,10 @@ def get_nice_data(fname):
 
     return (texts, opinions)
 
-
-
+def clean_answer(answer, prologue, code):
+    ret = []
+    outp = copen('outp', code, encoding='utf-8')
+    outp.write(prologue + '\n')
+    for feature in answer:
+        outp.write(feature[0] + ' ' + feature[1] + '\n')
+    return ret

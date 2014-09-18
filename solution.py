@@ -44,6 +44,17 @@ class Solution:
         return label_binarize(converted_op_list, \
                 multilabel=True, classes=range(n_ops))
 
+    def _decode_opinions(self, bvect):
+        ''' 
+            Reverse transformation to _encode_opinions.
+        '''
+        ret = []
+        for (op, number) in self._opinion_to_number:
+            if bvect[number] == 1:
+                ret.append(op)
+
+        return ret
+
     @staticmethod
     def _text_tokenize(text):
         text = Solution._normalize_text(text)
@@ -95,8 +106,18 @@ class Solution:
         return self
 
     def predict(self, text):
-        pass
+        tokens = Solution._text_tokenize(text)
+        features = self._get_features_from_tokens(tokens)
+
+        answer = self._clf.predict(features)
+        
+        return self._decode_opinions(answer)
 
     def getClasses(self, texts):
-        pass
+        classes = []
+        
+        for text in texts:
+            classes.append(self.predict(text))
+
+        return classes
 

@@ -41,7 +41,8 @@ class Solution:
             converted_op_list.append(tuple(map(lambda x: \
                     self._opinion_to_number[x], ops)))
 
-        return label_binarize(converted_op_list, classes=range(n_ops))
+        return label_binarize(converted_op_list, \
+                multilabel=True, classes=range(n_ops))
         
     def train(self, train_corp):
         texts = train_corp[0]
@@ -66,7 +67,9 @@ class Solution:
             features_list.append([0 for i in xrange(n_features)])
 
             for tk in tokens:
-                features_list[-1][self._ngram_to_number[tk]] += 1
+                for i in xrange(len(tk) - Solution._ngram + 1):
+                    ngram = tk[i:i + Solution._ngram]
+                    features_list[-1][self._ngram_to_number[ngram]] += 1
 
         self._clf.fit(features_list, target)
 

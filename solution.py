@@ -110,10 +110,18 @@ class Solution:
         tokens = Solution._text_tokenize(text)
         features = self._get_features_from_tokens(tokens)
 
-#        print features
         answer = self._clf.predict(features)[0]
         
         return self._decode_opinions(answer)
+
+    def predict_proba(self, X):
+        ret = []
+        for e in self._clf.estimators_:
+            try:
+                ret.append(e.predict_proba(X)[:,1])
+            except:
+                ret.append(e.predict(X))
+        return np.column_stack(ret)
 
     def getClasses(self, texts):
         classes = []

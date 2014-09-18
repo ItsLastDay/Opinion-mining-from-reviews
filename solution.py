@@ -2,7 +2,6 @@ from sklearn.multiclass import OneVsRestClassifier
 import numpy as np
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import label_binarize
-from sklearn.metrics import f1_score
 from nltk import word_tokenize
 
 class Solution:
@@ -111,6 +110,7 @@ class Solution:
         tokens = Solution._text_tokenize(text)
         features = self._get_features_from_tokens(tokens)
 
+#        print features
         answer = self._clf.predict(features)[0]
         
         return self._decode_opinions(answer)

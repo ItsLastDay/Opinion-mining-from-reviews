@@ -16,10 +16,11 @@ class Transformer:
         self._idx = None
 
     def fit(self, X, y):
+        X = np.array(X)
         self._clf.fit(X, y)
 
         self._idx = filter(lambda x: self._clf.feature_importances_[x] > 0, \
-                range(len(self._clf.feature_importances_))
+                range(len(self._clf.feature_importances_)))
 
         return [np.array(X[i])[self._idx] for i in xrange(len(X))]
 
@@ -78,7 +79,7 @@ class Solution:
                     self._opinion_to_number[x], ops)))
 
         return label_binarize(converted_op_list, \
-                multilabel=True, classes=range(n_ops))
+                multilabel=True, classes=range(len(self._opinion_to_number)))
 
     def _decode_opinions(self, bvect):
         ''' 
@@ -104,7 +105,7 @@ class Solution:
             for i in xrange(len(token) - sz + 1):
                 yield token[i:i + sz]
 
-    def _get_features_from_tokens(self, tokens):
+    def _get_features_from_tokens(self, tokens, useTransform=False):
         ret = [0 for i in xrange(len(self._ngram_to_number))]
 
         for token in tokens:
@@ -113,7 +114,10 @@ class Solution:
                 if idx != -1:
                     ret[idx] += 1
 
-        return self._feature_transformer.transform(ret)
+        if useTransform:
+            ret = self._feature_transformer.transform(ret)
+
+        return ret
 
     def train(self, train_corp):
         texts = train_corp[0]
@@ -146,7 +150,7 @@ class Solution:
 
     def predict(self, text):
         tokens = Solution._text_tokenize(text)
-        features = self._get_features_from_tokens(tokens)
+        features = self._get_features_from_tokens(tokens, True)
 
         answer = self._clf.predict(features)[0]
         

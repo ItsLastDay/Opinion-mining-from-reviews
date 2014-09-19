@@ -6,7 +6,7 @@ import numpy as np
 
 
 train_data = get_nice_data('reviews.json')
-train_data = list(map(lambda x: np.array(x), train_data))
+train_data = list(map(lambda x: np.array(x[:100]), train_data))
 
 scores = dict()
 for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \

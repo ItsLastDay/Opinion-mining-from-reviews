@@ -10,6 +10,22 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 
 
+class Transformer:
+    def __init__(self):
+        self._clf = DecisionTreeClassifier()
+        self._idx = None
+
+    def fit(self, X, y):
+        self._clf.fit(X, y)
+
+        self._idx = filter(lambda x: self._clf.feature_importances_[x] > 0, \
+                range(len(self._clf.feature_importances_))
+
+        return [np.array(X[i])[self._idx] for i in xrange(len(X))]
+
+    def transform(self, features):
+        return np.array(features)[self._idx]
+
 class Solution:
     _ngram = 3
     _stemmer = RussianStemmer('russian')
@@ -17,7 +33,7 @@ class Solution:
     def __init__(self, debug=False):
         self._opinion_to_number = dict()
         self._ngram_to_number = dict()
-        self._n_features = 0
+        self._feature_transformer = Transformer()
         self._debug = debug
         xxx = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2),\
                 n_estimators=20, learning_rate=1)
@@ -52,13 +68,11 @@ class Solution:
             ('fff', negative)], [('qqq', eutral)]] into
             [[1, 1, 0], [0, 0, 1]]
         '''
-        n_ops = 0
         converted_op_list = []
         for ops in op_list:
             for op in ops:
                 if op not in self._opinion_to_number:
-                    self._opinion_to_number[op] = n_ops
-                    n_ops += 1
+                    self._opinion_to_number[op] = len(self._opinion_to_number)
 
             converted_op_list.append(tuple(map(lambda x: \
                     self._opinion_to_number[x], ops)))
@@ -99,7 +113,7 @@ class Solution:
                 if idx != -1:
                     ret[idx] += 1
 
-        return ret
+        return self._feature_transformer.transform(ret)
 
     def train(self, train_corp):
         texts = train_corp[0]
@@ -120,6 +134,8 @@ class Solution:
 
         for tokens in token_list:
             features_list.append(self._get_features_from_tokens(tokens))
+
+        features_list = self._feature_transformer.fit(features_list, target)
 
         self._clf.fit(features_list, target)
 

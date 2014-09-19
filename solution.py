@@ -22,10 +22,10 @@ class Transformer:
         self._idx = filter(lambda x: self._clf.feature_importances_[x] > 0, \
                 range(len(self._clf.feature_importances_)))
 
-        return [np.array(X[i])[self._idx] for i in xrange(len(X))]
+        return [X[i][self._idx] for i in xrange(len(X))]
 
     def transform(self, features):
-        return np.array(features)[self._idx]
+        return features[self._idx]
 
 class Solution:
     _ngram = 3
@@ -38,7 +38,7 @@ class Solution:
         self._debug = debug
         xxx = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2),\
                 n_estimators=20, learning_rate=1)
-        xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
+        #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
         self._clf = OneVsRestClassifier(xxx, n_jobs=-1) 
     
     @staticmethod
@@ -106,7 +106,7 @@ class Solution:
                 yield token[i:i + sz]
 
     def _get_features_from_tokens(self, tokens, useTransform=False):
-        ret = [0 for i in xrange(len(self._ngram_to_number))]
+        ret = np.array([0] * len(self._ngram_to_number))
 
         for token in tokens:
             for ngram in Solution._get_ngrams(token):
@@ -155,15 +155,6 @@ class Solution:
         answer = self._clf.predict(features)[0]
         
         return self._decode_opinions(answer)
-
-    def predict_proba(self, X):
-        ret = []
-        for e in self._clf.estimators_:
-            try:
-                ret.append(e.predict_proba(X)[:,1])
-            except:
-                ret.append(e.predict(X))
-        return np.column_stack(ret)
 
     def getClasses(self, texts):
         classes = []

@@ -6,6 +6,10 @@ from nltk import word_tokenize
 from string import digits, punctuation
 from nltk.stem.snowball import RussianStemmer
 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
+
+
 class Solution:
     _ngram = 3
     _stemmer = RussianStemmer('russian')
@@ -13,9 +17,12 @@ class Solution:
     def __init__(self, debug=False):
         self._opinion_to_number = dict()
         self._ngram_to_number = dict()
-        self._n_fearures = 0
+        self._n_features = 0
         self._debug = debug
-        self._clf = OneVsRestClassifier(MultinomialNB(), n_jobs=-1) 
+        xxx = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2),\
+                n_estimators=20, learning_rate=1)
+        xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
+        self._clf = OneVsRestClassifier(xxx, n_jobs=-1) 
     
     @staticmethod
     def _normalize_text(text):

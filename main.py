@@ -3,10 +3,14 @@ from solution import Solution
 from sklearn.metrics import f1_score
 from sklearn.cross_validation import KFold
 import numpy as np
+import sys
 
 
 train_data = get_nice_data('reviews.json')
 train_data = list(map(lambda x: np.array(x), train_data))
+#sol = Solution(True)
+#sol.train(train_data)
+#sys.exit(0)
 
 scores = dict()
 for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \

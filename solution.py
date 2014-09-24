@@ -4,10 +4,11 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import label_binarize
 from nltk import word_tokenize
 from string import digits, punctuation
-from nltk.stem.snowball import RussianStemmer
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
+
+from sklearn import svm
 
 
 class Transformer:
@@ -28,17 +29,18 @@ class Transformer:
         return features[self._idx]
 
 class Solution:
-    _ngram = 3
-    _stemmer = RussianStemmer('russian')
+    _ngram = 5
 
     def __init__(self, debug=False):
         self._opinion_to_number = dict()
         self._ngram_to_number = dict()
         self._feature_transformer = Transformer()
         self._debug = debug
-        xxx = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2),\
-                n_estimators=20, learning_rate=1)
+        #xxx = AdaBoostClassifier(MultinomialNB(),\
+        #        n_estimators=500, learning_rate=1)
         #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
+        #xxx = svm.LinearSVC(dual=False)
+        xxx = MultinomialNB()
         self._clf = OneVsRestClassifier(xxx, n_jobs=-1) 
     
     @staticmethod
@@ -96,7 +98,7 @@ class Solution:
     def _text_tokenize(text):
         text = Solution._normalize_text(text)
         tokens = word_tokenize(text)
-        tokens = list(map(lambda x: '^' + Solution._stemmer.stem(x) + '$', tokens))
+        tokens = list(map(lambda x: '^' + x + '$', tokens))
         return tokens
         
     @staticmethod
@@ -139,7 +141,13 @@ class Solution:
         for tokens in token_list:
             features_list.append(self._get_features_from_tokens(tokens))
 
+        if self._debug:
+            print 'Initial number of features:', len(features_list[0])
+
         features_list = self._feature_transformer.fit(features_list, target)
+
+        if self._debug:
+            print 'Reduced number of features:', len(features_list[0])
 
         self._clf.fit(features_list, target)
 

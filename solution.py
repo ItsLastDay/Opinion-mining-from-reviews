@@ -206,4 +206,3 @@ class Solution:
 
         return classes
 
-    syn_dict = 

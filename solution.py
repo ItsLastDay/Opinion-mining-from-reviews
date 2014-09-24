@@ -1,4 +1,5 @@
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.cross_validation import Bootstrap
 import numpy as np
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import label_binarize
@@ -28,6 +29,44 @@ class Transformer:
     def transform(self, features):
         return features[self._idx]
 
+class Bagger:
+    def __init__(self):
+        #xxx = AdaBoostClassifier(MultinomialNB(),\
+        #        n_estimators=500, learning_rate=1)
+        #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
+        #xxx = svm.LinearSVC(dual=False)
+        xxx = MultinomialNB()
+        self._n_estimators = 16
+        self._estimators = [None for i in range(self._n_estimators)]
+        self._target_len = None
+        for i in range(self._n_estimators):
+            self._estimators[i] = OneVsRestClassifier(xxx, n_jobs=-1) 
+
+    def fit(self, features, target):
+        bs = Bootstrap(len(features), n_iter=self._n_estimators, \
+                train_size=len(features) - 1, random_state=0)
+        self._target_len = len(target[0])
+
+        i = 0
+        for (train, test) in bs:
+            t_set_features = np.array(features)[train]
+            t_set_target = np.array(target)[train]
+            self._estimators[i].fit(t_set_features, t_set_target)
+            i += 1
+
+    def predict(self, feature):
+        answers = np.array([self._estimators[i].predict(feature)[0] for i in range(\
+                self._n_estimators)]).mean(0)
+        ret = []
+        for i in range(self._target_len):
+            if answers[i] * 2 >= 1.0:
+                ret.append(1)
+            else:
+                ret.append(0)
+        return ret
+         
+
+
 class Solution:
     _ngram = 5
 
@@ -36,12 +75,7 @@ class Solution:
         self._ngram_to_number = dict()
         self._feature_transformer = Transformer()
         self._debug = debug
-        #xxx = AdaBoostClassifier(MultinomialNB(),\
-        #        n_estimators=500, learning_rate=1)
-        #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
-        #xxx = svm.LinearSVC(dual=False)
-        xxx = MultinomialNB()
-        self._clf = OneVsRestClassifier(xxx, n_jobs=-1) 
+        self._clf = Bagger() 
     
     @staticmethod
     def _normalize_text(text):
@@ -160,7 +194,7 @@ class Solution:
         tokens = Solution._text_tokenize(text)
         features = self._get_features_from_tokens(tokens, True)
 
-        answer = self._clf.predict(features)[0]
+        answer = self._clf.predict(features)
         
         return self._decode_opinions(answer)
 

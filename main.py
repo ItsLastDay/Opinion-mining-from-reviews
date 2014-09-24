@@ -12,7 +12,7 @@ train_data = list(map(lambda x: np.array(x), train_data))
 #sol.train(train_data)
 #sys.exit(0)
 
-scores = dict()
+scores = []
 for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
         shuffle=True):
     X_train = train_data[0][train_idx]
@@ -30,13 +30,23 @@ for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
     # not classificator's.
     answer = sol.getClasses(X_test)
 
-    print 'fold calculated'
-    for strat in ['samples']:
-        score = f1_score(Y_test, answer, average=strat)
-        print score
-        if strat not in scores:
-            scores[strat] = np.array([])
-        scores[strat] = np.append(scores[strat], score)
+    total_answers_test = sum([len(x) for x in Y_test])
+    total_answers_system = sum([len(x) for x in answer])
 
-for strat in ['samples']:
-    print 'Total f-score by', strat, 'averaging is', scores[strat].mean()
+    correct_answers = 0
+    for i in xrange(len(Y_test)):
+        my = set(answer[i])
+        ans = set(Y_test[i])
+        
+        correct_answers += len(my.intersection(ans))
+
+    print 'Fold calculated:'
+    print correct_answers, total_answers_test, total_answers_system
+    precision = float(correct_answers) / total_answers_system
+    recall = float(correct_answers) / total_answers_test
+    f_m = 2 * precision * recall / (precision + recall)
+    print precision, recall
+
+    scores.append(f_m)
+
+print 'Total score is:', np.array(scores).mean()

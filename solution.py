@@ -3,7 +3,7 @@ from sklearn.cross_validation import Bootstrap
 import numpy as np
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import label_binarize
-from nltk import word_tokenize
+import re
 from string import digits, punctuation
 
 from sklearn.tree import DecisionTreeClassifier
@@ -79,6 +79,7 @@ class Solution:
     
     @staticmethod
     def _normalize_text(text):
+        text = text.lower()
         cnt_digits = 0
         for dig in digits:
             cnt_digits += text.count(dig)
@@ -90,9 +91,10 @@ class Solution:
                 pass
             else:
                 cnt_punct += text.count(punct)
-            text = text.replace(punct, '')
+            text = text.replace(punct, ' ')
 
         text = text + ' ' + '0' * cnt_digits + ' ' + '!' * cnt_punct
+        text = re.sub('\s+', ' ', text)
         return text
 
     def _ngr_add(self, ngram):
@@ -131,7 +133,7 @@ class Solution:
     @staticmethod
     def _text_tokenize(text):
         text = Solution._normalize_text(text)
-        tokens = word_tokenize(text)
+        tokens = text.split(' ')
         tokens = list(map(lambda x: '^' + x + '$', tokens))
         return tokens
         

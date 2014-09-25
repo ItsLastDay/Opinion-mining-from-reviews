@@ -69,7 +69,7 @@ class Bagger:
 
 
 class Solution:
-    _ngram = 5
+    _ngram = 4
 
     def __init__(self, debug=False):
         self._opinion_to_number = dict()
@@ -158,7 +158,40 @@ class Solution:
 
         return ret
 
+    @staticmethod
+    def _remove_differencies(train_corp):
+        '''
+            When the same text appears multiple times in corpus,
+            we only remain features, that were marked by all people.
+        '''
+        cnt = dict()
+        op_cnt = dict()
+        for i in xrange(len(train_corp[0])):
+            text = train_corp[0][i]
+            features = set(train_corp[1][i])
+
+            op_cnt[text] = op_cnt.get(text, 0) + 1
+
+            if text not in cnt:
+                cnt[text] = dict()
+            for f in features:
+                cnt[text][f] = cnt[text].get(f, 0) + 1
+            
+
+        texts = [text for text in cnt.keys()]
+        target = []
+        for text in texts:
+            features = cnt[text]
+            men_voted = op_cnt[text]
+
+            features = filter(lambda x: cnt[text][x] * 2 > men_voted, features)
+
+            target.append(features)
+
+        return (texts, target)
+
     def train(self, train_corp):
+        train_corp = Solution._remove_differencies(train_corp)
         texts = train_corp[0]
 
         target = self._encode_opinions(train_corp[1])

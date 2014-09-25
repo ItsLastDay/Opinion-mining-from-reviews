@@ -5,6 +5,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import label_binarize
 from nltk import word_tokenize
 from string import digits, punctuation
+from subprocess import check_output
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
@@ -52,8 +53,9 @@ class MyStemWrapper:
             Returns list of pairs (token, lemmas). Just one call to mystem is used.
         '''
         tokens = list(filter(lambda x: x != '' and not self._has_punct(x), tokens))
-        output = check_output([self._mystem, "-nl"], universal_newlines=True,\
-                input='\n'.join(tokens))
+        output = check_output("echo " + ' '.join(tokens) + " | " +\
+                self._mystem + " -nl", universal_newlines=True,
+                shell=True)
 
         ret = []
         for (line, word) in zip(output.split('\n'), tokens):
@@ -70,7 +72,8 @@ class MyStemWrapper:
         if self._has_punct(token):
             # mystem thinks there is >1 words if '-' or ' ' are presented
             return [token]
-        output = check_output([self._mystem, "-nl"], universal_newlines=True, input=token)
+        output = check_output("echo " + token + " | " + self._mystem + "-nl",\
+                universal_newlines=True)
 
         output = output.strip().split('|')
         output = self._remove_questions(output)
@@ -130,13 +133,13 @@ class Bagger:
 
 class Solution:
     _ngram = 5
+    _lemmatizer = MyStemWrapper()
 
     def __init__(self, debug=False):
         self._opinion_to_number = dict()
         self._ngram_to_number = dict()
         self._feature_transformer = Transformer()
         self._debug = debug
-        self._lemmatizer = MyStemWrapper()
         self._clf = Bagger() 
     
     @staticmethod
@@ -196,7 +199,7 @@ class Solution:
     def _text_tokenize(text):
         text = Solution._normalize_text(text)
         tokens = word_tokenize(text)
-        tokens = list(map(lambda x: '^' + self._lemmatizer.lemmatize(x)[0]\
+        tokens = list(map(lambda x: '^' + Solution._lemmatizer.lemmatize(x)[0]\
                 + '$', tokens))
         return tokens
         

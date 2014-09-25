@@ -29,6 +29,66 @@ class Transformer:
     def transform(self, features):
         return features[self._idx]
 
+class MyStemWrapper:
+    def __init__(self):
+        self._mystem = './mystem'
+        self._lemmatized = dict()
+        self._has_punct = lambda x:\
+                any([c in x for c in punctuation + digits])
+
+    def _remove_questions(self, lst):
+        ret = []
+
+        for word in lst:
+            if word and word[-1] == '?':
+                ret.append(word[:-1])
+            else:
+                ret.append(word)
+
+        return ret
+
+    def _bulk_lemmatize(self, tokens):
+        '''
+            Returns list of pairs (token, lemmas). Just one call to mystem is used.
+        '''
+        tokens = list(filter(lambda x: x != '' and not self._has_punct(x), tokens))
+        output = check_output([self._mystem, "-nl"], universal_newlines=True,\
+                input='\n'.join(tokens))
+
+        ret = []
+        for (line, word) in zip(output.split('\n'), tokens):
+            line = line.strip().split('|')
+            line = self._remove_questions(line)
+            ret.append((word, line))
+
+        return ret
+
+    def _lemmatize(self, token):
+        '''
+            Returns list of possible lemmas of token using MyStem library.
+        '''
+        if self._has_punct(token):
+            # mystem thinks there is >1 words if '-' or ' ' are presented
+            return [token]
+        output = check_output([self._mystem, "-nl"], universal_newlines=True, input=token)
+
+        output = output.strip().split('|')
+        output = self._remove_questions(output)
+
+        return output
+        
+    def lemmatize(self, token):
+        if token not in self._lemmatized:
+            self._lemmatized[token] = self._lemmatize(token)
+        return self._lemmatized[token]
+
+    def bulk_lemmatize(self, tokens):
+        result = self._bulk_lemmatize(tokens)
+        for (token, lemmas) in result:
+            self._lemmatized[token] = lemmas
+
+
+
 class Bagger:
     def __init__(self):
         #xxx = AdaBoostClassifier(MultinomialNB(),\
@@ -76,6 +136,7 @@ class Solution:
         self._ngram_to_number = dict()
         self._feature_transformer = Transformer()
         self._debug = debug
+        self._lemmatizer = MyStemWrapper()
         self._clf = Bagger() 
     
     @staticmethod
@@ -135,7 +196,8 @@ class Solution:
     def _text_tokenize(text):
         text = Solution._normalize_text(text)
         tokens = word_tokenize(text)
-        tokens = list(map(lambda x: '^' + x + '$', tokens))
+        tokens = list(map(lambda x: '^' + self._lemmatizer.lemmatize(x)[0]\
+                + '$', tokens))
         return tokens
         
     @staticmethod
@@ -196,6 +258,11 @@ class Solution:
 
         target = self._encode_opinions(train_corp[1])
         features_list = []
+
+        all_texts = set()
+        for text in texts:
+            all_texts.update(word_tokenize(text))
+        self._lemmatizer.bulk_lemmatize(list(all_texts))
 
         token_list = []
         for text in texts:

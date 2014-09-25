@@ -51,6 +51,7 @@ class Bagger:
         for (train, test) in bs:
             t_set_features = np.array(features)[train]
             t_set_target = np.array(target)[train]
+            t_set_target[0] = [1] * len(t_set_target[0])
             self._estimators[i].fit(t_set_features, t_set_target)
             i += 1
 

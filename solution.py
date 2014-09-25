@@ -1,6 +1,7 @@
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.cross_validation import Bootstrap
 import numpy as np
+import re
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import label_binarize
 from nltk import word_tokenize
@@ -41,10 +42,9 @@ class MyStemWrapper:
         ret = []
 
         for word in lst:
-            if word and word[-1] == '?':
-                ret.append(word[:-1])
-            else:
-                ret.append(word)
+            while word != '' and word[-1] == '?':
+                word = word[:-1]
+            ret.append(word)
 
         return ret
 
@@ -52,6 +52,7 @@ class MyStemWrapper:
         '''
             Returns list of pairs (token, lemmas). Just one call to mystem is used.
         '''
+        tokens = list(filter(lambda x: not self._has_punct(x), tokens))
         tokens = list(filter(lambda x: x != '' and not self._has_punct(x), tokens))
         output = check_output("echo " + ' '.join(tokens) + " | " +\
                 self._mystem + " -nl", universal_newlines=True,
@@ -69,11 +70,11 @@ class MyStemWrapper:
         '''
             Returns list of possible lemmas of token using MyStem library.
         '''
-        if self._has_punct(token):
+        if self._has_punct(token) or token == '':
             # mystem thinks there is >1 words if '-' or ' ' are presented
             return [token]
-        output = check_output("echo " + token + " | " + self._mystem + "-nl",\
-                universal_newlines=True)
+        output = check_output("echo " + token + " | " + self._mystem + " -nl",
+                shell=True)
 
         output = output.strip().split('|')
         output = self._remove_questions(output)
@@ -144,6 +145,7 @@ class Solution:
     
     @staticmethod
     def _normalize_text(text):
+        text = text.lower()
         cnt_digits = 0
         for dig in digits:
             cnt_digits += text.count(dig)
@@ -155,9 +157,10 @@ class Solution:
                 pass
             else:
                 cnt_punct += text.count(punct)
-            text = text.replace(punct, '')
+            text = text.replace(punct, ' ')
 
         text = text + ' ' + '0' * cnt_digits + ' ' + '!' * cnt_punct
+        text = re.sub('\s+', ' ', text)
         return text
 
     def _ngr_add(self, ngram):
@@ -196,11 +199,13 @@ class Solution:
         return ret
 
     @staticmethod
-    def _text_tokenize(text):
+    def _text_tokenize(text, use_lemmatizer=True):
         text = Solution._normalize_text(text)
-        tokens = word_tokenize(text)
-        tokens = list(map(lambda x: '^' + Solution._lemmatizer.lemmatize(x)[0]\
-                + '$', tokens))
+        tokens = text.split(' ')
+        if use_lemmatizer:
+            tokens = list(map(lambda x: Solution._lemmatizer.lemmatize(x)[0]\
+                    , tokens))
+        tokens = list(map(lambda x: '^' + x + '$', tokens))
         return tokens
         
     @staticmethod
@@ -264,8 +269,8 @@ class Solution:
 
         all_texts = set()
         for text in texts:
-            all_texts.update(word_tokenize(text))
-        self._lemmatizer.bulk_lemmatize(list(all_texts))
+            all_texts.update(set(Solution._text_tokenize(text, False)))
+        self._lemmatizer.bulk_lemmatize(list(map(lambda x: x[1:-1], all_texts)))
 
         token_list = []
         for text in texts:

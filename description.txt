@@ -1,0 +1,24 @@
+1) Classificators:
+    I use Multinomial Naive Bayes from scikit-learn;
+It is wrapped into sklearn.multiclass.OneVsRestClassifier to support multiple-label output.
+Another layer is my implementation of Bagging (bootstrapping + aggregating).
+
+No specific model for opinion mining is used.
+
+2) Features:
+    Each text is divided into 1-, 2-, 3-, 4-, 5-grams (symbolwise). Suppose we have K unqiue ngrams.
+I replace text with vector V (|V| = K) of frequencies of each ngram. 
+
+Then, the dimensionality reduction applies: we build decision tree and look,
+which features have 'importance' in that tree's structure. Only those features 
+are taken into account from each sample. 
+
+3) Tokenization:
+    Every digit and punctuation is removed, text is tokenized via
+nltk.word_tokenize, then each token is stemmed via nltk.snowball.
+
+4) Target values (opinions):
+    Each pair of <feature, tone> is treated as a single category.
+Therefore, we have 13 * 3 = 39 of them. They are encoded as numbers, and
+then binarization is applied: instead of set of numbers of arbitrary length,
+we have fixed-length bool vectors.   

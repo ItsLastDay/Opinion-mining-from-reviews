@@ -45,7 +45,7 @@ for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
     precision = float(correct_answers) / total_answers_system
     recall = float(correct_answers) / total_answers_test
     f_m = 2 * precision * recall / (precision + recall)
-    print precision, recall
+    print precision, recall, f_m
 
     scores.append(f_m)
 

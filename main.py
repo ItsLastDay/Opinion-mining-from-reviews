@@ -8,9 +8,6 @@ import sys
 
 train_data = get_nice_data('reviews.json')
 train_data = list(map(lambda x: np.array(x), train_data))
-#sol = Solution(True)
-#sol.train(train_data)
-#sys.exit(0)
 
 scores = []
 for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
@@ -45,7 +42,7 @@ for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
     precision = float(correct_answers) / total_answers_system
     recall = float(correct_answers) / total_answers_test
     f_m = 2 * precision * recall / (precision + recall)
-    print precision, recall
+    print precision, recall, f_m
 
     scores.append(f_m)
 

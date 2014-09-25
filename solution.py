@@ -36,7 +36,7 @@ class Bagger:
         #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
         #xxx = svm.LinearSVC(dual=False)
         xxx = MultinomialNB()
-        self._n_estimators = 16
+        self._n_estimators = 50
         self._estimators = [None for i in range(self._n_estimators)]
         self._target_len = None
         for i in range(self._n_estimators):
@@ -51,6 +51,7 @@ class Bagger:
         for (train, test) in bs:
             t_set_features = np.array(features)[train]
             t_set_target = np.array(target)[train]
+            t_set_target[0] = [1 for k in xrange(len(t_set_target[1]))]
             self._estimators[i].fit(t_set_features, t_set_target)
             i += 1
 
@@ -114,6 +115,8 @@ class Solution:
             converted_op_list.append(tuple(map(lambda x: \
                     self._opinion_to_number[x], ops)))
 
+        if self._debug:
+            print self._opinion_to_number
         return label_binarize(converted_op_list, \
                 multilabel=True, classes=range(len(self._opinion_to_number)))
 
@@ -141,6 +144,38 @@ class Solution:
             for i in xrange(len(token) - sz + 1):
                 yield token[i:i + sz]
 
+    @staticmethod
+    def _remove_differencies(train_corp):
+        '''
+            When the same text appears multiple times in corpus,
+            we only remain features, that were marked by all people.
+        '''
+        cnt = dict()
+        op_cnt = dict()
+        for i in xrange(len(train_corp[0])):
+            text = train_corp[0][i]
+            features = set(train_corp[1][i])
+
+            op_cnt[text] = op_cnt.get(text, 0) + 1
+
+            if text not in cnt:
+                cnt[text] = dict()
+            for f in features:
+                cnt[text][f] = cnt[text].get(f, 0) + 1
+            
+
+        texts = [text for text in cnt.keys()]
+        target = []
+        for text in texts:
+            features = cnt[text]
+            men_voted = op_cnt[text]
+
+            features = filter(lambda x: cnt[text][x] * 2 > men_voted, features)
+
+            target.append(features)
+
+        return (texts, target)
+
     def _get_features_from_tokens(self, tokens, useTransform=False):
         ret = np.array([0] * len(self._ngram_to_number))
 
@@ -156,6 +191,7 @@ class Solution:
         return ret
 
     def train(self, train_corp):
+        train_corp = Solution._remove_differencies(train_corp)
         texts = train_corp[0]
 
         target = self._encode_opinions(train_corp[1])

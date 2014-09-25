@@ -36,7 +36,7 @@ class Bagger:
         #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
         #xxx = svm.LinearSVC(dual=False)
         xxx = MultinomialNB()
-        self._n_estimators = 16
+        self._n_estimators = 32
         self._estimators = [None for i in range(self._n_estimators)]
         self._target_len = None
         for i in range(self._n_estimators):

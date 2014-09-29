@@ -133,7 +133,7 @@ class Bagger:
 
 
 class Solution:
-    _ngram = 5
+    _ngram = 4
     _lemmatizer = MyStemWrapper()
 
     def __init__(self, debug=False):
@@ -278,6 +278,8 @@ class Solution:
             token_list.append([])
 
             for token in tokens:
+                if self._debug:
+                    print token
                 token_list[-1].append(token)
 
                 for ngram in Solution._get_ngrams(token):

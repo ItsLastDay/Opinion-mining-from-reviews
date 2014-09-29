@@ -14,7 +14,7 @@ from sklearn import svm
 
 class Transformer:
     def __init__(self):
-        self._clf = DecisionTreeClassifier(min_samples_leaf=7)
+        self._clf = DecisionTreeClassifier(min_samples_leaf=5)
         self._idx = None
 
     def fit(self, X, y):
@@ -35,7 +35,7 @@ class Bagger:
         #        n_estimators=500, learning_rate=1)
         #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
         #xxx = svm.LinearSVC(dual=False)
-        xxx = MultinomialNB(alpha=1.05)
+        xxx = MultinomialNB()
         self._n_estimators = 32
         self._estimators = [None for i in range(self._n_estimators)]
         self._target_len = None

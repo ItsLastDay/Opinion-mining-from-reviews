@@ -26,6 +26,27 @@ for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
     # opinion is presented in all training data. I think it's data problem,
     # not classificator's.
     answer = sol.getClasses(X_test)
+    
+    current_score = []
+    presented_classes = set()
+    for x in Y_test:
+        presented_classes.update(set(x))
+
+    for cl in sorted(presented_classes):
+        bin_test = [1 if cl in x else 0 for x in Y_test]
+        bin_ans = [1 if cl in x else 0 for x in answer]
+        current_score.append(f1_score(bin_test, bin_ans))
+
+    for (i, cl) in enumerate(sorted(presented_classes)):
+        bin_test = [1 if cl in x else 0 for x in Y_test]
+        bin_ans = [1 if cl in x else 0 for x in answer]
+        print cl[0], cl[1], 'occured in answer', sum(bin_test), 'times, and in my', \
+                sum(bin_ans), 'times; f-score is', current_score[i]
+    score = np.array(current_score).mean()
+    print score
+
+    scores.append(score)
+    '''
 
     total_answers_test = sum([len(x) for x in Y_test])
     total_answers_system = sum([len(x) for x in answer])
@@ -45,5 +66,6 @@ for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
     print precision, recall, f_m
 
     scores.append(f_m)
+    '''
 
 print 'Total score is:', np.array(scores).mean()

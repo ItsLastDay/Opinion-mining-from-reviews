@@ -7,10 +7,10 @@ import sys
 
 
 train_data = get_nice_data('reviews.json')
-train_data = list(map(lambda x: np.array(x[:100]), train_data))
+train_data = list(map(lambda x: np.array(x), train_data))
 
 scores = []
-for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
+for train_idx, test_idx in KFold(len(train_data[0]), n_folds=5, \
         shuffle=True):
     X_train = train_data[0][train_idx]
     Y_train = train_data[1][train_idx]
@@ -18,7 +18,7 @@ for train_idx, test_idx in KFold(len(train_data[0]), n_folds=10, \
     X_test = train_data[0][test_idx]
     Y_test = train_data[1][test_idx]
 
-    sol = Solution(True)
+    sol = Solution()
     sol.train((X_train, Y_train))
 
     # sometimes it says "AttributeError: '_ConstantPredictor'

@@ -54,12 +54,14 @@ class MyStemWrapper:
         '''
         tokens = list(filter(lambda x: not self._has_punct(x), tokens))
         tokens = list(filter(lambda x: x != '' and not self._has_punct(x), tokens))
-        output = check_output("echo " + ' '.join(tokens) + " | " +\
+        output = []
+        for i in xrange(0, len(tokens), 100):
+            output.extend(check_output("echo " + ' '.join(tokens[i:i + 100]) + " | " +\
                 self._mystem + " -nl", universal_newlines=True,
-                shell=True)
+                shell=True).split('\n'))
 
         ret = []
-        for (line, word) in zip(output.split('\n'), tokens):
+        for (line, word) in zip(output, tokens):
             line = line.strip().split('|')
             line = self._remove_questions(line)
             ret.append((word, line))
@@ -260,6 +262,12 @@ class Solution:
 
         return ret
 
+    def _prepare_lemmatizer(self, texts):
+        all_texts = set()
+        for text in texts:
+            all_texts.update(set(Solution._text_tokenize(text, False)))
+        self._lemmatizer.bulk_lemmatize(list(map(lambda x: x[1:-1], all_texts)))
+    
     def train(self, train_corp):
         train_corp = Solution._remove_differencies(train_corp)
         texts = train_corp[0]
@@ -267,10 +275,8 @@ class Solution:
         target = self._encode_opinions(train_corp[1])
         features_list = []
 
-        all_texts = set()
-        for text in texts:
-            all_texts.update(set(Solution._text_tokenize(text, False)))
-        self._lemmatizer.bulk_lemmatize(list(map(lambda x: x[1:-1], all_texts)))
+
+        self._prepare_lemmatizer(texts)
 
         token_list = []
         for text in texts:
@@ -278,8 +284,10 @@ class Solution:
             token_list.append([])
 
             for token in tokens:
+
                 if self._debug:
                     print token
+
                 token_list[-1].append(token)
 
                 for ngram in Solution._get_ngrams(token):
@@ -313,6 +321,7 @@ class Solution:
 
     def getClasses(self, texts):
         classes = []
+        self._prepare_lemmatizer(texts)
         
         for text in texts:
             classes.append(self.predict(text))

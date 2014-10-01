@@ -1,4 +1,5 @@
 from sklearn.multiclass import OneVsRestClassifier
+from data_extractor import get_nice_data 
 from sklearn.cross_validation import Bootstrap
 import numpy as np
 from sklearn.naive_bayes import MultinomialNB
@@ -8,14 +9,18 @@ from string import digits, punctuation
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
+from sklearn.decomposition import PCA
 
 from sklearn import svm
 
+import sys
 
 class Transformer:
-    def __init__(self):
-        self._clf = DecisionTreeClassifier(min_samples_leaf=5)
+    def __init__(self, use_PCA=False):
+        self._clf = DecisionTreeClassifier()
         self._idx = None
+        self._trans = PCA('mle')
+        self._use_PCA = use_PCA
 
     def fit(self, X, y):
         X = np.array(X)
@@ -24,10 +29,17 @@ class Transformer:
         self._idx = filter(lambda x: self._clf.feature_importances_[x] > 0, \
                 range(len(self._clf.feature_importances_)))
 
-        return [X[i][self._idx] for i in xrange(len(X))]
+        new_set = [X[i][self._idx] for i in xrange(len(X))]
+        if self._use_PCA:
+            new_set = self._trans.fit_transform(new_set)
+        return new_set
 
     def transform(self, features):
-        return features[self._idx]
+        features = features[self._idx]
+        if self._use_PCA:
+            features = self._trans.transform(features)
+        return features
+
 
 class Bagger:
     def __init__(self):
@@ -35,8 +47,9 @@ class Bagger:
         #        n_estimators=500, learning_rate=1)
         #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
         #xxx = svm.LinearSVC(dual=False)
-        xxx = MultinomialNB()
-        self._n_estimators = 32
+        xxx = MultinomialNB(alpha=1.0)
+        #xxx = DecisionTreeClassifier(min_samples_leaf=10)
+        self._n_estimators = 10
         self._estimators = [None for i in range(self._n_estimators)]
         self._target_len = None
         for i in range(self._n_estimators):
@@ -191,6 +204,8 @@ class Solution:
         return (texts, target)
 
     def train(self, train_corp):
+        if not self._debug:
+            train_corp = get_nice_data(train_corp)
         train_corp = Solution._remove_differencies(train_corp)
         texts = train_corp[0]
 

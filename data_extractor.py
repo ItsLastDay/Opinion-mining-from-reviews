@@ -8,8 +8,7 @@ def get_data(fname):
     inp.close()
     return data
 
-def get_nice_data(fname):
-    jdata = get_data(fname)
+def get_nice_data(jdata):
     texts = []
     opinions = []
 

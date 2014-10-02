@@ -10,15 +10,18 @@ from string import digits, punctuation
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.decomposition import PCA
+from sklearn.linear_model import LogisticRegression
 
 from sklearn import svm
+from sklearn.preprocessing import StandardScaler
 
 import sys
 
 class Transformer:
     def __init__(self, use_PCA=False):
-        self._clf = DecisionTreeClassifier()
+        self._clf = DecisionTreeClassifier(min_samples_leaf=1)
         self._idx = None
+        self._scaler = StandardScaler()
         self._trans = PCA('mle')
         self._use_PCA = use_PCA
 
@@ -30,12 +33,16 @@ class Transformer:
                 range(len(self._clf.feature_importances_)))
 
         new_set = [X[i][self._idx] for i in xrange(len(X))]
+
+#        new_set = self._scaler.fit_transform(new_set)
+
         if self._use_PCA:
             new_set = self._trans.fit_transform(new_set)
         return new_set
 
     def transform(self, features):
         features = features[self._idx]
+#        features = self._scaler.transform(features.astype(float))
         if self._use_PCA:
             features = self._trans.transform(features)
         return features
@@ -47,8 +54,9 @@ class Bagger:
         #        n_estimators=500, learning_rate=1)
         #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
         #xxx = svm.LinearSVC(dual=False)
-        xxx = MultinomialNB(alpha=1.0)
+        #xxx = MultinomialNB(alpha=1.0)
         #xxx = DecisionTreeClassifier(min_samples_leaf=10)
+        xxx = LogisticRegression()
         self._n_estimators = 10
         self._estimators = [None for i in range(self._n_estimators)]
         self._target_len = None
@@ -82,7 +90,7 @@ class Bagger:
 
 
 class Solution:
-    _ngram = 4
+    _ngram = 3
 
     def __init__(self, debug=False):
         self._opinion_to_number = dict()
@@ -172,7 +180,7 @@ class Solution:
         return ret
 
     @staticmethod
-    def _remove_differencies(train_corp):
+    def _remove_differencies(train_corp, strong=False):
         '''
             When the same text appears multiple times in corpus,
             we only remain features, that were marked by all people.
@@ -197,7 +205,10 @@ class Solution:
             features = cnt[text]
             men_voted = op_cnt[text]
 
-            features = filter(lambda x: cnt[text][x] * 2 > men_voted, features)
+            if not strong:
+                features = filter(lambda x: cnt[text][x] * 2 > men_voted, features)
+            else:
+                features = filter(lambda x: cnt[text][x] == men_voted, features)
 
             target.append(features)
 

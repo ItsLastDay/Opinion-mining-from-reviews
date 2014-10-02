@@ -24,7 +24,7 @@ def transform(ops, tr):
 
 if True:
     train_data = get_nice_data(get_data('reviews.json'))
-    train_data = list(map(lambda x: np.array(x[:100]), train_data))
+    train_data = list(map(lambda x: np.array(x), train_data))
 
     scores = []
     for train_idx, test_idx in KFold(len(train_data[0]), n_folds=3, \
@@ -32,8 +32,8 @@ if True:
         X_train = train_data[0][train_idx]
         Y_train = train_data[1][train_idx]
 
-        X_test = train_data[0][test_idx]
-        Y_test = train_data[1][test_idx]
+        X_test, Y_test = Solution._remove_differencies((train_data[0][test_idx],\
+                train_data[1][test_idx]), True)
 
         sol = Solution(True)
         sol.train((X_train, Y_train))
@@ -48,7 +48,7 @@ if True:
         answer = transform(answer, transformer)
         Y_test = transform(Y_test, transformer)
         
-        f_m = f1_score(Y_test, answer, labels=range(len(transformer)) ,average='micro')
+        f_m = f1_score(Y_test, answer, labels=range(len(transformer)), average='micro')
 
         print 'F-measure for this fold is', f_m
         scores.append(f_m)

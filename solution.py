@@ -18,8 +18,8 @@ from sklearn.preprocessing import StandardScaler
 import sys
 
 class Transformer:
-    def __init__(self, use_PCA=False):
-        self._clf = DecisionTreeClassifier(min_samples_leaf=1)
+    def __init__(self, use_PCA=True):
+        self._clf = DecisionTreeClassifier(min_samples_leaf=10)
         self._idx = None
         self._scaler = StandardScaler()
         self._trans = PCA('mle')
@@ -52,7 +52,7 @@ class Bagger:
     def __init__(self):
         #xxx = AdaBoostClassifier(MultinomialNB(),\
         #        n_estimators=500, learning_rate=1)
-        #xxx = RandomForestClassifier(n_estimators=20, min_samples_split=1)
+        #xxx = RandomForestClassifier(n_estimators=10)
         #xxx = svm.LinearSVC(dual=False)
         #xxx = MultinomialNB(alpha=1.0)
         #xxx = DecisionTreeClassifier(min_samples_leaf=10)
@@ -85,19 +85,19 @@ class Bagger:
                 ret.append(1)
             else:
                 ret.append(0)
-        return ret
+        return [ret]
          
 
 
 class Solution:
-    _ngram = 3
+    _ngram = 4
 
     def __init__(self, debug=False):
         self._opinion_to_number = dict()
         self._ngram_to_number = dict()
         self._feature_transformer = Transformer()
         self._debug = debug
-        self._clf = Bagger() 
+        self._clf = RandomForestClassifier() 
     
     @staticmethod
     def _normalize_text(text):
@@ -256,7 +256,7 @@ class Solution:
         tokens = Solution._text_tokenize(text)
         features = self._get_features_from_tokens(tokens, True)
 
-        answer = self._clf.predict(features)
+        answer = self._clf.predict(features)[0]
         
         return self._decode_opinions(answer)
 

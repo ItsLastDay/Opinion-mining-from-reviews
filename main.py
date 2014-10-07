@@ -27,7 +27,7 @@ if True:
     train_data = list(map(lambda x: np.array(x), train_data))
 
     scores = []
-    for train_idx, test_idx in KFold(len(train_data[0]), n_folds=3, \
+    for train_idx, test_idx in KFold(len(train_data[0]), n_folds=7, \
             shuffle=True):
         X_train = train_data[0][train_idx]
         Y_train = train_data[1][train_idx]
